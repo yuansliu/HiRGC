@@ -2,6 +2,9 @@
 
 A high performance referential genome compression algorithm (termed HiRGC)
 
+#### Result
+The performance of HiRGC is compared on six benchmark human genome data sets with four state-of-the-art compression algorithms. HiRGC uses less than 15 minutes to compress about 15 gigabytes of each set of five target genomes into less than 100 megabytes, achieving a compression ratio of 150 times. This speed is significant faster (at least 4 times) than the state-of-the-art algorithms, and the compression ratio is improved by one to two orders of magnitude. HiRGC also exhibits a very stable and robust performance when tested on different reference genomes, greatly narrowing down the wide performance variation of other methods reported in the literature.
+
 ## Compile
 	make hirgc
 	make de_hirgc
