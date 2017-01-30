@@ -20,7 +20,7 @@ The following three different commands:
 * -m is the mode that the user want to used;
 * -r is the reference (a FASTA file or a genome folder);
 * -t is the target (a FASTA file or a genome folder or a file contains a list of genome folder);
-* -n is a file contains name of chromosomes or a string "default".
+* -n is a file containing name of chromosomes or a string "default".
 
 ---
 **Some other explaination**<br />
