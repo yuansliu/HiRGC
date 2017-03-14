@@ -16,37 +16,37 @@
 
 using namespace std;
 
-const int MAX_CHAR_NUM = 1<<28;
-const int code_rule[4] = {0, 1, 2, 3};//A-0; C-1; G-2; T-3;
-const char invert_code_rule[4] = {'A', 'C', 'G', 'T'};
-const int max_arr_num_bit = 30;
-const int max_arr_num_bit_shift = max_arr_num_bit>>1;
-const int max_arr_num = 1<<max_arr_num_bit;
-const int min_size = 1<<20;
+const int MAX_CHAR_NUM = 1<<28;//maximum length of a chromosome
+const int code_rule[4] = {0, 1, 2, 3};//A-0; C-1; G-2; T-3; encoding rule //discarded
+const char invert_code_rule[4] = {'A', 'C', 'G', 'T'}; //decoding rule
+const int max_arr_num_bit = 30; //relate to length of hash table
+const int max_arr_num_bit_shift = max_arr_num_bit>>1; //half
+const int max_arr_num = 1<<max_arr_num_bit; // maximum length of hash table
+const int min_size = 1<<20; //minimum length for other arrays 
 
-const int sub_str_num = 20;
+const int sub_str_num = 20; //hash function; the modulus s
 
-struct POSITION_RANGE { //record lower case range
+struct POSITION_RANGE { //an interval
 	int begin, length;//
 };
 
-struct POSITION_OTHER_CHAR {
+struct POSITION_OTHER_CHAR {//for other characters
 	int pos, ch;
 };
 
 //for target and ref genomic
-char *meta_data;
-POSITION_RANGE *pos_vec, *n_vec;
-POSITION_OTHER_CHAR *other_char_vec;
-int *line_break_vec;
-int *tar_seq_code, *ref_seq_code;
-int other_char_len, str_len, tar_seq_len, ref_seq_len, pos_vec_len, n_vec_len, line_break_len;
-int *loc;
-int *point;
-char *dismatched_str;
+char *meta_data; // identifier
+POSITION_RANGE *pos_vec, *n_vec; //pos_ver is intervals of low-case letters; n_vec for the letter 'N'
+POSITION_OTHER_CHAR *other_char_vec; // for other characters
+int *line_break_vec;//EOL character; equivalent length of short sequence
+int *tar_seq_code, *ref_seq_code; // target and reference sequence after encoding
+int other_char_len, str_len, tar_seq_len, ref_seq_len, pos_vec_len, n_vec_len, line_break_len; //lengths related to their arrays
+int *loc; //an array of header points
+int *point; // an array of entries
+char *dismatched_str; //mismatched subsequence
 
-inline void initial() {
-	meta_data = new char[50];
+inline void initial() { // malloc momories
+	meta_data = new char[500];
 	pos_vec = new POSITION_RANGE[min_size];
 	line_break_vec = new int[1<<23];
 	n_vec = new  POSITION_RANGE[min_size];
@@ -61,7 +61,7 @@ inline void initial() {
 	dismatched_str = new char[min_size];
 }
 
-inline void clear() {
+inline void clear() { // free
 	delete[] meta_data;
 	delete[] pos_vec;
 	delete[] line_break_vec;
@@ -74,7 +74,7 @@ inline void clear() {
 	delete[] dismatched_str;
 }
 
-int agctIndex(char ch) {
+int agctIndex(char ch) { //encoding rule
     if (ch == 'A') {
         return 0;
     }
@@ -90,7 +90,7 @@ int agctIndex(char ch) {
     return 4;
 }
 
-void readRefFile(char *refFile) {
+void readRefFile(char *refFile) { // processing reference file
 	int _ref_seq_len = 0;
 	char ch[128];
 	FILE *fp = fopen(refFile, "r");
@@ -111,7 +111,7 @@ void readRefFile(char *refFile) {
 				temp_ch = toupper(temp_ch);
 			}
 			index = agctIndex(temp_ch);
-			if (index^4) {
+			if (index^4) {//only A T C T are saved
 				ref_seq_code[_ref_seq_len++] = index;
 			}
 		}
@@ -120,7 +120,7 @@ void readRefFile(char *refFile) {
 	ref_seq_len = _ref_seq_len;
 }
 
-void readTarFile(char *tarFile) {
+void readTarFile(char *tarFile) {// processing target file; recording all auxiliary information  
 	FILE *fp = fopen(tarFile, "r");
 	if (NULL == fp) {
 		printf("fail to open file %s\n", tarFile);
@@ -211,7 +211,7 @@ void readTarFile(char *tarFile) {
 	tar_seq_len = _tar_seq_len;
 }
 
-void writeRunLengthCoding(FILE *fp, int vec_len, int *vec) {
+void writeRunLengthCoding(FILE *fp, int vec_len, int *vec) { // run-length coding for EOL
 	vector<int> code;
 	if (vec_len > 0) {
 		code.push_back(vec[0]);
@@ -237,22 +237,22 @@ void writeRunLengthCoding(FILE *fp, int vec_len, int *vec) {
 	fprintf(fp, "\n");
 }
 
-void saveOtherData(FILE *fp) {
-	fprintf(fp, "%s\n", meta_data);
+void saveOtherData(FILE *fp) { // write auxiliary information to file
+	fprintf(fp, "%s\n", meta_data);//identifier
 	//------------------------
-	writeRunLengthCoding(fp, line_break_len, line_break_vec);
+	writeRunLengthCoding(fp, line_break_len, line_break_vec);//length of shor seuqences
 	//------------------------
-	fprintf(fp, "%d", pos_vec_len);
+	fprintf(fp, "%d", pos_vec_len); //intervals of lower-case letters
 	for (int i = 0; i < pos_vec_len; i++) {
 		fprintf(fp, " %d %d", pos_vec[i].begin, pos_vec[i].length);
 	}
 	//------------------------
-	fprintf(fp, "\n%d", n_vec_len);
+	fprintf(fp, "\n%d", n_vec_len); //intervals of the letter 'N'
 	for (int i = 0; i < n_vec_len; i++) {
 		fprintf(fp, " %d %d", n_vec[i].begin, n_vec[i].length);
 	}
 	//------------------------
-	fprintf(fp, "\n%d", other_char_len);
+	fprintf(fp, "\n%d", other_char_len); //other characters
 	if (other_char_len > 0) {
 		int flag[30];
 		for (int i = 0; i < 26; i++) {
@@ -300,8 +300,8 @@ void saveOtherData(FILE *fp) {
 	fprintf(fp, "\n");
 }
 
-void preProcessRef() {
-	for (int i = 0; i < max_arr_num; i++) {
+void preProcessRef() { // construction of hash table
+	for (int i = 0; i < max_arr_num; i++) {//initial entries
 		point[i] = -1;
 	}
 
@@ -330,7 +330,7 @@ void preProcessRef() {
 	}	
 }
 
-void searchMatch(char *refFile) {
+void searchMatch(char *refFile) { // greedy matching
 	FILE *fp = fopen(refFile, "w");
 	if (NULL == fp) {
 		printf("ERROR! fail to open file %s\n", refFile);
@@ -362,7 +362,7 @@ void searchMatch(char *refFile) {
 				ref_idx = k + max_arr_num_bit_shift;//loc[k].pos == k
 				tar_idx = i + max_arr_num_bit_shift;
 				length = max_arr_num_bit_shift;
-				while (ref_idx < ref_seq_len && tar_idx < tar_seq_len && ref_seq_code[ref_idx++] == tar_seq_code[tar_idx++]) {
+				while (ref_idx < ref_seq_len && tar_idx < tar_seq_len && ref_seq_code[ref_idx++] == tar_seq_code[tar_idx++]) {//extend current match
 					length++;
 				}
 				if (length >= sub_str_num && length > max_length) {
@@ -370,7 +370,7 @@ void searchMatch(char *refFile) {
 					max_k = k;
 				}
 			}
-			if (max_k > -1) {
+			if (max_k > -1) { //if a match is found
 				//first print mismatch substring
 				if (dis_str_len > 0) {
 					dismatched_str[dis_str_len] = '\0';
@@ -581,7 +581,7 @@ vector<string> defalt_name_list = {"chr1.fa", "chr2.fa", "chr3.fa", "chr4.fa",
 	char ref[100], tar[100], res[100];
 	char cmd[200]; 
 
-	string fold_list[] = {"YH", "HG18", "HG19", "HG38", "KOREF20090131", "KOREF20090224"};
+	string fold_list[] = {"HuRef", "HG17", "YH", "HG18", "HG19", "HG38", "KOREF20090131", "KOREF20090224"};
 	string name_list[] = {"chr1.fa", "chr2.fa", "chr3.fa", "chr4.fa", 
                     "chr5.fa", "chr6.fa", "chr7.fa", "chr8.fa", "chr9.fa", "chr10.fa", 
                     "chr11.fa", "chr12.fa", "chr13.fa", "chr14.fa", "chr15.fa", "chr16.fa", "chr17.fa", 
@@ -589,10 +589,10 @@ vector<string> defalt_name_list = {"chr1.fa", "chr2.fa", "chr3.fa", "chr4.fa",
 	// sub_str_num = 20; //important*************
 	
 	for (int ri = 0; ri < 1; ri++) {
-		for (int ti = 0; ti < 6; ti++) {
+		for (int ti = 0; ti < 8; ti++) {
 			if (ri != ti) {
 				char temp[100];
-				sprintf(temp, "%s_ref_%s_test2", fold_list[ti].c_str(), fold_list[ri].c_str());
+				sprintf(temp, "%s_ref_%s", fold_list[ti].c_str(), fold_list[ri].c_str());
 				sprintf(cmd, "mkdir %s", temp);
 				system(cmd);
 
@@ -626,7 +626,8 @@ vector<string> defalt_name_list = {"chr1.fa", "chr2.fa", "chr3.fa", "chr4.fa",
 	}
 	
 	return 0;
-}*/
+}
+*/
 
 bool getList(char *list_file, vector<string> &name_list) {
 	FILE *fp = fopen(list_file, "r");
@@ -701,7 +702,7 @@ int main(int argc, char *argv[]) {
 					tar_fold = optarg;
 					break;
 				case 'n':
-					if (strcmp(optarg, "default")) {
+					if (strcmp(optarg, "default")==0) {
 						setDefaltName(chr_name_list);
 					} else {
 						flag &= getList(optarg, chr_name_list);
@@ -729,7 +730,7 @@ int main(int argc, char *argv[]) {
 					flag &= getList(optarg, fold_list);
 					break;
 				case 'n':
-					if (strcmp(optarg, "default")) {
+					if (strcmp(optarg, "default")==0) {
 						setDefaltName(chr_name_list);
 					} else {
 						flag &= getList(optarg, chr_name_list);
