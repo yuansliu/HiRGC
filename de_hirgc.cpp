@@ -43,7 +43,7 @@ int other_char_len, str_len, tar_seq_len, ref_seq_len, pos_vec_len, n_vec_len, l
 const int sub_str_num = 20;
 
 void initial() {
-	meta_data = new char[50];
+	meta_data = new char[2048];
 	tar_seq = new char[MAX_CHAR_NUM];
 	ref_seq = new char[MAX_CHAR_NUM];
 }
@@ -56,18 +56,18 @@ void clear() {
 
 void readRefFile(char *refFile) {
 	ref_seq_len = 0;
-	char ch[1000];
+	char ch[2048];
 	FILE *fp = fopen(refFile, "r");
 	if (NULL == fp) {
 		printf("fail to open file %s\n", refFile);
+		exit(0);
 		return;
 	}
 	int temp_len;
 	char temp_ch;
+	fgets(ch, 2048, fp);
+
 	while (fscanf(fp, "%s", ch) != EOF) {
-		if (ch[0] == '>' || ch[0] == '@') {
-			continue;
-		}
 		// printf("%s\n", ch);
 		temp_len = strlen(ch);
 		for (int i = 0; i < temp_len; i++) {
@@ -110,8 +110,9 @@ void readRunLengthCoding(FILE *fp, int &vec_len, int **vec) {
 }
 
 void readOtherData(FILE *fp) {
-	meta_data = new char[100];
-	fscanf(fp, "%s", meta_data);
+	meta_data = new char[2048];
+	fgets(meta_data, 2048, fp);
+	// fscanf(fp, "%s", meta_data);
 
 	readRunLengthCoding(fp, line_break_len, &line_break_vec);
 
@@ -191,27 +192,36 @@ void readCompressedFile(char *tarFile) {
 	FILE *fp = fopen(tarFile, "r");
 	if (NULL == fp) {
 		printf("ERROR! fail to open file %s\n", tarFile);
+		exit(0);
 	}
 	readOtherData(fp);
-
+	// cerr << "after readOtherData()...\n";
 	int pre_pos = 0, cur_pos, length;;
 	tar_seq_len = 0;
 	// printf("%s\n", ref_seq);
-	char *str = new char[20000];
+	char *str = new char[MAX_CHAR_NUM];
+
 	while (fgets(str, MAX_CHAR_NUM, fp) != NULL) {
 		if (str[0] == '\n') continue;
 		// printf("cmd: %s", str);
+		// cerr << "str: " << str << "\n";
 		if (exitSpace(str)) {
 			sscanf(str, "%d%d", &cur_pos, &length);
+			// cerr << cur_pos << "; " << length << "\n";
 			cur_pos += pre_pos;
 			length += sub_str_num;
 			pre_pos = cur_pos + length;
+
+			// cerr << cur_pos << "; " << length << "\n";
+
 			for (int i = cur_pos, j = 0; j < length; j++, i++) {
 				tar_seq[tar_seq_len++] = ref_seq[i];
 			}
 			tar_seq[tar_seq_len] = '\0';
+			// cerr<<"over\n";
 		} else {
 			int str_len = strlen(str);
+			// cerr << str_len << "\n";
 			for (int i = 0; i < str_len-1; i++) {
 				tar_seq[tar_seq_len++] = invert_code_rule[str[i]-'0'];
 			}
@@ -227,6 +237,7 @@ void saveDecompressedData(char *resultFile) {
 	FILE *fp = fopen(resultFile, "w");
 	if (NULL == fp) {
 		printf("ERROR! fail to open file %s\n", resultFile);
+		exit(0);
 		return;
 	}
 
@@ -269,7 +280,7 @@ void saveDecompressedData(char *resultFile) {
 	}
 	str[str_len] = '\0';
 
-	fprintf(fp, "%s\n", meta_data);
+	fprintf(fp, "%s", meta_data);
 
 	int k = 0;
 	for (int i = 0; i < pos_vec_len; i++) {
@@ -313,19 +324,21 @@ void saveDecompressedData(char *resultFile) {
 
 void decompressFile(char *refFile, char *tarFile, char *resultFile) {
 	readRefFile(refFile);//must read first;
+	// cerr << "after readRefFile()...\n";
 	readCompressedFile(tarFile);
+	// cerr << "after readCompressedFile()...\n";
 	saveDecompressedData(resultFile);
 }
 
 void decompressFile(char *refFile, char *tarFile) {
 	initial();//****important
-	char cmd[200]; 
+	char cmd[1024]; 
 	sprintf(cmd, "./7za x %s", tarFile);
 	system(cmd);
 
 	printf("decompressing...\n");
 	
-	char temp[50];
+	char temp[1024];
 	sprintf(temp, "%s", tarFile);
 	for (int i = 0; temp[i]; i++) {
 		if (temp[i] == '.' && temp[i+1] == '7') {
@@ -333,36 +346,52 @@ void decompressFile(char *refFile, char *tarFile) {
 			break;
 		}
 	}
-	char res[100];
+	char res[1024];
 	sprintf(res, "dec_%s", temp);
 	decompressFile(refFile, temp, res);
 
 	clear();
 }
 
+void run7za(vector<string> &tar_list) {
+	int list_size = tar_list.size();
+	char cmd[1024]; 
+	for (int i = 0; i < list_size; i++) {
+		sprintf(cmd, "./7za x %s", tar_list[i].c_str());
+		system(cmd);
+
+		tar_list[i] = tar_list[i].substr(0, tar_list[i].length()-3);
+		// cerr << tar_list[i];
+		sprintf(cmd, "mkdir %s_dec", tar_list[i].c_str());
+		// system(cmd);
+	}
+}
+
 void decompressGenome(char *ref_fold, char *tar_7z, vector<string> &chr_name_list) {
 	initial();//****important
-	char ref[100], tar[100], res[100];
-	char cmd[200]; 
-	sprintf(cmd, "./7za x %s", tar_7z);
-	system(cmd);
+	char ref[1024], tar[1024], res[1024];
+	char cmd[1024]; 
 
-	char temp[10];
+	char temp[1024];
 	sprintf(temp, "%s", tar_7z);
-	for (int i = 0; temp[i]; i++) {
+	// cerr << temp <<endl;
+	for (int i = 0; temp[i] != '\0'; i++) {
+		// cerr <<temp[i] << endl;
 		if (temp[i] == '.' && temp[i+1] == '7') {
 			temp[i] = '\0';
 			break;
 		}
 	}
-
-	// sprintf(cmd, "rm -rf %s_dec", temp);
+	// sprintf(cmd, "rm -rf %s", temp);
 	// system(cmd);
+
+	sprintf(cmd, "./7za x %s", tar_7z);
+	system(cmd);
 
 	sprintf(cmd, "mkdir %s_dec", temp);
 	system(cmd);
+
 	printf("the decompress result saved in '%s_dec'\n", temp);
-	
 	int size = chr_name_list.size();
 	for (int i = 0; i < size; i++) {
 		sprintf(ref, "%s/%s", ref_fold, chr_name_list[i].c_str());
@@ -379,76 +408,52 @@ void decompressGenome(char *ref_fold, char *tar_7z, vector<string> &chr_name_lis
 	clear();
 }
 
+int decompressSet(char *ref_fold, vector<string> &fold_list, vector<string> &chr_name_list) {//hirgc refFold tarFold
+	char cmd[1024]; 
+	
+	run7za(fold_list);
+	int fold_size = fold_list.size();
+	for (int i = 0; i < fold_size; i++) {
+		sprintf(cmd, "mkdir %s_dec", fold_list[i].c_str());
+		system(cmd);
+	}
+
+	char ref[1024], tar[1024], res[1024];
+	char temp[1024];
+	initial(); //important*************
+
+	int size = chr_name_list.size();
+	for (int i = 0; i < size; i++) {
+
+		sprintf(ref, "%s/%s", ref_fold, chr_name_list[i].c_str());
+
+		readRefFile(ref);
+		
+		for (int ti = 0; ti < fold_size; ti++) {
+			sprintf(temp, "%s_dec", fold_list[ti].c_str());
+
+			sprintf(tar, "%s/%s", fold_list[ti].c_str(), chr_name_list[i].c_str());
+			sprintf(res, "%s/%s", temp, chr_name_list[i].c_str());
+
+			printf("decompressing %s ...\n", tar);
+
+			readCompressedFile(tar);
+			// cerr << "after readCompressedFile()...\n";
+			saveDecompressedData(res);
+		}
+	}
+	for (int i = 0; i < fold_size; i++) {
+		sprintf(cmd, "rm -rf %s", fold_list[i].c_str());
+		system(cmd);
+	}
+	clear();
+	return 0;
+}
+
 vector<string> defalt_name_list = {"chr1.fa", "chr2.fa", "chr3.fa", "chr4.fa", 
                     "chr5.fa", "chr6.fa", "chr7.fa", "chr8.fa", "chr9.fa", "chr10.fa", 
                     "chr11.fa", "chr12.fa", "chr13.fa", "chr14.fa", "chr15.fa", "chr16.fa", "chr17.fa", 
                     "chr18.fa", "chr19.fa", "chr20.fa", "chr21.fa", "chr22.fa", "chrX.fa", "chrY.fa"};
-
-/*int main() {
-	char refFile[100], tarFile[100], resultFile[100];
-	initial();
-	sprintf(refFile, "HG18/chr1.fa");
-	sprintf(tarFile, "temp.cd");
-	sprintf(resultFile, "de.fa");
-	decompressFile(refFile, tarFile, resultFile);
-	return 0;
-}*/
-
-/*int main(int argc, char* argv[]) {
-	//1 mapping_file, 2 ref_fold, 3 7z_file
-	char ref[100], tar[100], res[100], str1[100], str2[100];
-	char cmd[200]; 
-	if (argc != 4) {
-		printf("parameters not correct!\n");
-	} else {
-		FILE *fp_map = fopen(argv[1], "r");
-		if (!fp_map) {
-			printf("fail to open mapping file.");
-		} else {
-			initial();//important
-
-			sprintf(cmd, "./7za x %s", argv[3]);
-			system(cmd);
-
-			char temp[10];
-			sprintf(temp, "%s", argv[3]);
-			for (int i = 0; temp[i]; i++) {
-				if (temp[i] == '.' && temp[i+1] == '7') {
-					temp[i] = '\0';
-					break;
-				}
-			}
-
-			sprintf(cmd, "rm %s_dec", temp);
-			system(cmd);
-
-			sprintf(cmd, "mkdir %s_dec", temp);
-			system(cmd);
-			printf("the decompress result saved in '%s_dec'\n", temp);
-			
-			struct  timeval  start;
-			struct  timeval  end;
-			unsigned long timer;
-			gettimeofday(&start,NULL);
-			
-			while(fscanf(fp_map, "%s%s", str1, str2) != EOF) {
-				sprintf(ref, "%s/%s", argv[2], str1);
-				sprintf(tar, "%s/%s", temp, str2);
-				printf("decompressing %s\n", tar);
-				sprintf(res, "%s_dec/%s", temp, str2);
-
-				decompressFile(ref, tar, res);
-			}
-			
-			sprintf(cmd, "rm -rf %s", temp);
-			system(cmd);
-
-			gettimeofday(&end,NULL);
-			timer = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
-			printf("total compression timer = %lf ms\n", timer/1000.0);
-		}
-	}
-}*/
 
 bool getList(char *list_file, vector<string> &name_list) {
 	FILE *fp = fopen(list_file, "r");
@@ -475,8 +480,24 @@ void setDefaltName(vector<string> &name_list) {
 	}
 }
 
+void show_usage() {
+    cout << "HiRGC v1.0\n";
+	cout << "Usage: de_hirgc -m <mode> -r <reference> -t <target> -n <file>\n";
+	cout << "  -m is the mode, three limited values <file, genome, set>, required\n";
+    cout << "  -r is the reference, a FASTA file or a genome folder according to the mode, required\n";
+	cout << "  -t is the target, a .7z format file, required\n";
+    cout << " -n is a file containing name of chromosomes or a string \"default\"\n";
+	cout << "Examples:\n";
+	cout << "  de_hirgc -m file -r YH_chr1.fa -t HG18_chr1.fa_ref_YH_chr1.fa.7z\n";
+	cout << "  de_hirgc -m genome -r YH -t HG18_ref_YH.7z -n default\n";
+	cout << "  de_hirgc -m genome -r YH -t HG18_ref_YH.7z -n chr_name.txt\n";
+	cout << "  de_hirgc -m set -r YH -t de_genome_set.txt -n default\n";
+	cout << "  de_hirgc -m set -r YH -t de_genome_set.txt -n chr_name.txt\n";
+}
+
 int main(int argc, char *argv[]) {
 	vector<string> chr_name_list;
+	vector<string> fold_list;
 
 	bool flag = true, decompressed = false;
 	int oc;
@@ -489,6 +510,9 @@ int main(int argc, char *argv[]) {
 
 	if ((oc = getopt(argc, argv, "m:")) >= 0) {
 		mode = optarg;
+	} else {
+		show_usage();
+		return 0;
 	}
 
 	if (strcmp(mode, "file") == 0) {
@@ -512,7 +536,7 @@ int main(int argc, char *argv[]) {
 			decompressed = true;
 		}
 
-	} else 
+	} else  
 	if (strcmp(mode, "genome") == 0 ){
 		while ((oc = getopt(argc, argv, "r:t:n:")) >= 0) {
 			switch(oc) {
@@ -523,7 +547,7 @@ int main(int argc, char *argv[]) {
 					tar_fold = optarg;
 					break;
 				case 'n':
-					if (strcmp(optarg, "default")) {
+					if (strcmp(optarg, "default") == 0) {
 						setDefaltName(chr_name_list);
 					} else {
 						flag &= getList(optarg, chr_name_list);
@@ -539,11 +563,38 @@ int main(int argc, char *argv[]) {
 			decompressGenome(ref_fold, tar_fold, chr_name_list);
 			decompressed = true;
 		}
+	} else 
+	if (strcmp(mode, "set") == 0) {
+		while ((oc = getopt(argc, argv, "r:t:n:")) >= 0) {
+			switch(oc) {
+				case 'r':
+					ref_fold = optarg;
+					break;
+				case 't':
+					flag &= getList(optarg, fold_list);
+					break;
+				case 'n':
+					if (strcmp(optarg, "default") == 0) {
+						setDefaltName(chr_name_list);
+					} else {
+						flag &= getList(optarg, chr_name_list);
+					}
+					break;
+				case '?':
+					flag = false;
+					break;
+			}
+		}
 
-	} 
+		if (flag && ref_fold && fold_list.size() > 0 && chr_name_list.size() > 0) {
+			decompressSet(ref_fold, fold_list, chr_name_list);
+			decompressed = true;
+		}
+	}
 
 	if (!decompressed) {
-		printf("arguments error...\n");
+		// printf("arguments error...\n");
+		show_usage();
 		return 0;
 	}
 

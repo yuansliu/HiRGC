@@ -5,6 +5,8 @@ A high performance referential genome compression algorithm (termed HiRGC)
 #### Result
 The performance of HiRGC is compared with four state-of-the-art compression algorithms on eight human genome benchmark data sets. HiRGC uses less than 30 minutes to compress about 21 gigabytes of each set of seven target genomes into 96 to 260 megabytes, achieving compression ratios of 217 to 82 times. This performance is one order of magnitude better than most of the state-of-the-art algorithms, and it is at least 1.9 times better than their best performance. The compression speed is at least 2.9 times faster. HiRGC also exhibits a very stable and robust performance when tested on different reference genomes, greatly narrowing down the wide variation of the existing algorithms’ performance.
 
+Two reference genome and a compressed result by iDoComp can be downloaded from [here](https://www.dropbox.com/s/3lg2131t2wdo6la/hg19_YH.zip?dl=0)
+
 ## Compile
 	make hirgc
 	make de_hirgc
@@ -35,13 +37,14 @@ The following three different commands:
 
     ./de_hirgc -m file -r YH_chr1.fa -t HG18_chr1.fa_ref_YH_chr1.fa.7z
     ./de_hirgc -m genome -r YH -t HG18_ref_YH.7z -n chr_name.txt/default
+    ./de_hirgc -m set -r YH -t de_genome_set.txt -n chr_name.txt/default
 
 - the first command decompress a compressed chromosome file *xxx.7z* to *dec_xxx*.
 - the second command decomperss a  compressed genome folder *yyy.7z* to *dec_yyy*.
 - the parameter *-n* is identical to the compression procedure.
 
 ## Status
-Submitted to *Bioinformatics*.
+Submitted to *Bioinformatics* (major revision).
 
 ### Contacts
 If any bugs during you run our code, please email to <yyuanshengliu@gmail.com>
