@@ -5,7 +5,7 @@ A high performance referential genome compression algorithm (termed HiRGC)
 #### Result
 The performance of HiRGC is compared with four state-of-the-art compression algorithms on eight human genome benchmark data sets. HiRGC uses less than 30 minutes to compress about 21 gigabytes of each set of seven target genomes into 96 to 260 megabytes, achieving compression ratios of 217 to 82 times. This performance is one order of magnitude better than most of the state-of-the-art algorithms, and it is at least 1.9 times better than their best performance. The compression speed is at least 2.9 times faster. HiRGC also exhibits a very stable and robust performance when tested on different reference genomes, greatly narrowing down the wide variation of the existing algorithms’ performance.
 
-Two genomes (i.e., HG19 and YH) and a compressed result by iDoComp can be downloaded from [here](https://www.dropbox.com/s/3lg2131t2wdo6la/hg19_YH.zip?dl=0 "genomes HG19 and YH"){:target="_blank"}
+Two genomes (i.e., HG19 and YH) and a compressed result by iDoComp can be downloaded from [here](https://www.dropbox.com/s/3lg2131t2wdo6la/hg19_YH.zip?dl=0 "genomes HG19 and YH")
 
 ## Compile
 	make hirgc
