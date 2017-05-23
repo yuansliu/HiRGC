@@ -1,6 +1,6 @@
 # HiRGC
 
-A high performance referential genome compression algorithm (termed HiRGC)
+<!-- A high performance referential genome compression algorithm (termed HiRGC) -->
 
 ## Compile & Run
 	javac HiRGC.java
