@@ -44,7 +44,10 @@ The following three different commands:
 - the parameter *-n* is identical to the compression procedure.
 
 ## Status
-Submitted to *Bioinformatics* (major revision).
+Published in *Bioinformatics* DOI: https://doi.org/10.1093/bioinformatics/btx412.
+
+## Citation
+Yuansheng Liu, Hui Peng, Limsoon Wong, Jinyan Li; High-speed and high-ratio referential genome compression, Bioinformatics, btx412, 2017, https://doi.org/10.1093/bioinformatics/btx412
 
 ### Contacts
 If any bugs during you run our code, please email to <yyuanshengliu@gmail.com>
