@@ -2,6 +2,10 @@
 
 A high performance referential genome compression algorithm (termed HiRGC)
 
+## Correction of Example 1
+There is typos in Example 1. We correct it in the following.
+<img src="https://sites.google.com/site/yyuanshengliu/home/correction/example1-hirgc.png">
+
 #### Performance
 We present a high-performance referential genome compression algorithm named HiRGC. It is based on a 2-bit encoding scheme and an advanced greedy-matching search on a hash table. We compare the performance of HiRGC with four state-of-the-art compression methods on a benchmark data set of eight human genomes. HiRGC takes less than 30 minutes to compress about 21 gigabytes of each set of the seven target genomes into 96 to 260 megabytes, achieving compression ratios of 217 to 82 times. This performance is at least 1.9 times better than the best competing algorithm on its best case. Our compression speed is also at least 2.9 times faster. HiRGC is stable and robust to deal with different reference genomes. In contrast, the competing methods’ performance varies widely on different reference genomes. More experiments on 100 human genomes from the 1000 Genome Project and on genomes of several other species again demonstrate that HiRGC’s performance is consistently excellent.
 
